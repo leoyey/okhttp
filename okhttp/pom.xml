@@ -77,6 +77,46 @@
           </archive>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <version>2.3.1</version>
+        <executions>
+          <execution>
+            <id>default-install</id>
+            <phase>none</phase>
+          </execution>
+          <execution>
+            <id>ssext-install</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>install</phase>
+            <configuration>
+              <file>${build.directory}/${project.build.finalName}.${project.packaging}</file>
+              <generatePom>false</generatePom>
+              <pomFile>pom.xml</pomFile>
+              <artifactId>${project.artifactId}-ssext</artifactId>
+              <version>${project.version}</version>
+            </configuration>
+          </execution>
+<!--          <execution>-->
+<!--            <id>ssext-install-source</id>-->
+<!--            <goals>-->
+<!--              <goal>install-file</goal>-->
+<!--            </goals>-->
+<!--            <phase>install</phase>-->
+<!--            <configuration>-->
+<!--              <file>${build.directory}/${project.build.finalName}-sources.${project.packaging}</file>-->
+<!--              <generatePom>false</generatePom>-->
+<!--              <pomFile>pom.xml</pomFile>-->
+<!--              <artifactId>${project.artifactId}-ssext</artifactId>-->
+<!--              <classifier>sources</classifier>-->
+<!--              <version>${project.version}</version>-->
+<!--            </configuration>-->
+<!--          </execution>-->
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>
