@@ -24,10 +24,12 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
 import okhttp3.Address;
 import okhttp3.Route;
@@ -69,6 +71,7 @@ public final class RealConnectionPool {
 
   private final Deque<RealConnection> connections = new ArrayDeque<>();
   final RouteDatabase routeDatabase = new RouteDatabase();
+  final Map<String, Integer> http2UrlMaxRequestMap = new ConcurrentHashMap<>();
   boolean cleanupRunning;
 
   public RealConnectionPool(int maxIdleConnections, long keepAliveDuration, TimeUnit timeUnit) {
@@ -79,6 +82,11 @@ public final class RealConnectionPool {
     if (keepAliveDuration <= 0) {
       throw new IllegalArgumentException("keepAliveDuration <= 0: " + keepAliveDuration);
     }
+  }
+
+  // check http://nginx.org/en/docs/http/ngx_http_v2_module.html#http2_max_requests
+  public Map<String, Integer> getHttp2UrlMaxRequestMap() {
+    return http2UrlMaxRequestMap;
   }
 
   public synchronized int idleConnectionCount() {

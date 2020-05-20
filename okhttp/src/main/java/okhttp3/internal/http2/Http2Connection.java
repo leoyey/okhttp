@@ -98,6 +98,7 @@ public final class Http2Connection implements Closeable {
   final Listener listener;
   final Map<Integer, Http2Stream> streams = new LinkedHashMap<>();
   final String connectionName;
+  final int maxStreamId;
   int lastGoodStreamId;
   int nextStreamId;
   private boolean shutdown;
@@ -157,6 +158,7 @@ public final class Http2Connection implements Closeable {
     if (builder.client) {
       nextStreamId += 2; // In HTTP/2, 1 on client is reserved for Upgrade.
     }
+    maxStreamId = builder.maxRequests > 0 ? (nextStreamId + builder.maxRequests * 2) : 0;
 
     // Flow control was designed more for servers, or proxies than edge clients.
     // If we are a client, set the flow control window to 16MiB.  This avoids
@@ -556,6 +558,10 @@ public final class Http2Connection implements Closeable {
     // A degraded pong is overdue.
     if (degradedPongsReceived < degradedPingsSent && nowNs >= degradedPongDeadlineNs) return false;
 
+    if (maxStreamId > 0 && nextStreamId >= maxStreamId) {
+      return false;
+    }
+
     return true;
   }
 
@@ -600,6 +606,7 @@ public final class Http2Connection implements Closeable {
     PushObserver pushObserver = PushObserver.CANCEL;
     boolean client;
     int pingIntervalMillis;
+    int maxRequests;
 
     /**
      * @param client true if this peer initiated the connection; false if this peer accepted the
@@ -639,6 +646,11 @@ public final class Http2Connection implements Closeable {
 
     public Builder pingIntervalMillis(int pingIntervalMillis) {
       this.pingIntervalMillis = pingIntervalMillis;
+      return this;
+    }
+
+    public Builder maxRequests(int maxRequests) {
+      this.maxRequests = maxRequests;
       return this;
     }
 
@@ -754,7 +766,7 @@ public final class Http2Connection implements Closeable {
       }
       Http2Stream rstStream = removeStream(streamId);
       if (rstStream != null) {
-        rstStream.receiveRstStream(errorCode);
+        rstStream.receiveRstStream(errorCode, 0);
       }
     }
 
@@ -846,7 +858,7 @@ public final class Http2Connection implements Closeable {
       // Fail all streams created after the last good stream ID.
       for (Http2Stream http2Stream : streamsCopy) {
         if (http2Stream.getId() > lastGoodStreamId && http2Stream.isLocallyInitiated()) {
-          http2Stream.receiveRstStream(REFUSED_STREAM);
+          http2Stream.receiveRstStream(REFUSED_STREAM, lastGoodStreamId);
           removeStream(http2Stream.getId());
         }
       }

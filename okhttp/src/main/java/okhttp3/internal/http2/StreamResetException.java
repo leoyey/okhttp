@@ -20,9 +20,17 @@ import java.io.IOException;
 /** Thrown when an HTTP/2 stream is canceled without damage to the socket that carries it. */
 public final class StreamResetException extends IOException {
   public final ErrorCode errorCode;
+  public final int streamId;
+  public final int errorStreamId;
 
   public StreamResetException(ErrorCode errorCode) {
+    this(errorCode, 0, 0);
+  }
+
+  public StreamResetException(ErrorCode errorCode, int streamId, int errorStreamId) {
     super("stream was reset: " + errorCode);
     this.errorCode = errorCode;
+    this.streamId = streamId;
+    this.errorStreamId = errorStreamId;
   }
 }

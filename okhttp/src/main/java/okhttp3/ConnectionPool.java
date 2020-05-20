@@ -16,6 +16,7 @@
  */
 package okhttp3;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import okhttp3.internal.connection.RealConnectionPool;
 
@@ -38,6 +39,10 @@ public final class ConnectionPool {
 
   public ConnectionPool(int maxIdleConnections, long keepAliveDuration, TimeUnit timeUnit) {
     this.delegate = new RealConnectionPool(maxIdleConnections, keepAliveDuration, timeUnit);
+  }
+
+  public Map<String, Integer> getHttp2UrlMaxRequestMap() {
+    return delegate.getHttp2UrlMaxRequestMap();
   }
 
   /** Returns the number of idle connections in the pool. */

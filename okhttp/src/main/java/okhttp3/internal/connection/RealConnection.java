@@ -307,10 +307,19 @@ public final class RealConnection extends Http2Connection.Listener implements Co
 
   private void startHttp2(int pingIntervalMillis) throws IOException {
     socket.setSoTimeout(0); // HTTP/2 connection timeouts are set per-stream.
+    int maxRequests = 0;
+    if (!connectionPool.http2UrlMaxRequestMap.isEmpty()) {
+      String maxRequestsKey = route.address().url().host() + ":" + route.address().url().port();
+      Integer maxRequestsValue = connectionPool.http2UrlMaxRequestMap.get(maxRequestsKey);
+      if (maxRequestsValue != null) {
+        maxRequests = maxRequestsValue;
+      }
+    }
     http2Connection = new Http2Connection.Builder(true)
         .socket(socket, route.address().url().host(), source, sink)
         .listener(this)
         .pingIntervalMillis(pingIntervalMillis)
+        .maxRequests(maxRequests)
         .build();
     http2Connection.start();
   }

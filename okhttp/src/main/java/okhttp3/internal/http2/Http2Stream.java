@@ -75,6 +75,7 @@ public final class Http2Stream {
    * reason known to this peer.
    */
   @Nullable ErrorCode errorCode;
+  int errorStreamId;
 
   /** The exception that explains {@code errorCode}. Null if no exception was provided. */
   @Nullable IOException errorException;
@@ -156,7 +157,8 @@ public final class Http2Stream {
     if (!headersQueue.isEmpty()) {
       return headersQueue.removeFirst();
     }
-    throw errorException != null ? errorException : new StreamResetException(errorCode);
+    throw errorException != null ? errorException : new StreamResetException(errorCode,
+        id, errorStreamId);
   }
 
   /**
@@ -165,7 +167,8 @@ public final class Http2Stream {
    */
   public synchronized Headers trailers() throws IOException {
     if (errorCode != null) {
-      throw errorException != null ? errorException : new StreamResetException(errorCode);
+      throw errorException != null ? errorException : new StreamResetException(errorCode,
+          id, errorStreamId);
     }
     if (!source.finished || !source.receiveBuffer.exhausted() || !source.readBuffer.exhausted()) {
       throw new IllegalStateException("too early; can't read the trailers yet");
@@ -324,9 +327,10 @@ public final class Http2Stream {
     }
   }
 
-  synchronized void receiveRstStream(ErrorCode errorCode) {
+  synchronized void receiveRstStream(ErrorCode errorCode, int errorStreamId) {
     if (this.errorCode == null) {
       this.errorCode = errorCode;
+      this.errorStreamId = errorStreamId;
       notifyAll();
     }
   }
@@ -381,7 +385,7 @@ public final class Http2Stream {
               // Prepare to deliver an error.
               errorExceptionToDeliver = errorException != null
                   ? errorException
-                  : new StreamResetException(errorCode);
+                  : new StreamResetException(errorCode, id, errorStreamId);
             }
 
             if (closed) {
@@ -647,7 +651,8 @@ public final class Http2Stream {
     } else if (sink.finished) {
       throw new IOException("stream finished");
     } else if (errorCode != null) {
-      throw errorException != null ? errorException : new StreamResetException(errorCode);
+      throw errorException != null ? errorException : new StreamResetException(errorCode,
+          id, errorStreamId);
     }
   }
 
