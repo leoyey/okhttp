@@ -582,6 +582,14 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     return socket;
   }
 
+  public boolean allocRequest() {
+    if (http2Connection != null) {
+      return http2Connection.allocRequest();
+    } else {
+      return true;
+    }
+  }
+
   /** Returns true if this connection is ready to host new streams. */
   public boolean isHealthy(boolean doExtensiveChecks) {
     if (socket.isClosed() || socket.isInputShutdown() || socket.isOutputShutdown()) {

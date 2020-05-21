@@ -100,7 +100,9 @@ public final class Http2Connection implements Closeable {
   final String connectionName;
   final int maxStreamId;
   int lastGoodStreamId;
+  final int maxRequestCount;
   int nextStreamId;
+  int allocRequestCount;
   private boolean shutdown;
 
   /** Asynchronously writes frames to the outgoing socket. */
@@ -158,6 +160,7 @@ public final class Http2Connection implements Closeable {
     if (builder.client) {
       nextStreamId += 2; // In HTTP/2, 1 on client is reserved for Upgrade.
     }
+    maxRequestCount = builder.maxRequests;
     maxStreamId = builder.maxRequests > 0 ? (nextStreamId + builder.maxRequests * 2) : 0;
 
     // Flow control was designed more for servers, or proxies than edge clients.
@@ -187,6 +190,16 @@ public final class Http2Connection implements Closeable {
     writer = new Http2Writer(builder.sink, client);
 
     readerRunnable = new ReaderRunnable(new Http2Reader(builder.source, client));
+  }
+
+  public synchronized boolean allocRequest() {
+    if (maxRequestCount > 0) {
+      if (allocRequestCount >= maxRequestCount) {
+        return false;
+      }
+      ++allocRequestCount;
+    }
+    return true;
   }
 
   /**
@@ -559,6 +572,9 @@ public final class Http2Connection implements Closeable {
     if (degradedPongsReceived < degradedPingsSent && nowNs >= degradedPongDeadlineNs) return false;
 
     if (maxStreamId > 0 && nextStreamId >= maxStreamId) {
+      return false;
+    }
+    if (maxRequestCount > 0 && allocRequestCount > maxRequestCount) {
       return false;
     }
 

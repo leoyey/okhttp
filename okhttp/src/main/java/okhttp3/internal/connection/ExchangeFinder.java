@@ -114,10 +114,11 @@ final class ExchangeFinder {
           return candidate;
         }
       }
+      boolean canAllocRequest = candidate.allocRequest();
 
       // Do a (potentially slow) check to confirm that the pooled connection is still good. If it
       // isn't, take it out of the pool and start again.
-      if (!candidate.isHealthy(doExtensiveHealthChecks)) {
+      if (!canAllocRequest || !candidate.isHealthy(doExtensiveHealthChecks)) {
         candidate.noNewExchanges();
         continue;
       }
