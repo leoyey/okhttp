@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
 import okhttp3.Address;
+import okhttp3.LocalAddressProvider;
 import okhttp3.Route;
 import okhttp3.internal.Util;
 import okhttp3.internal.connection.Transmitter.TransmitterReference;
@@ -72,6 +73,7 @@ public final class RealConnectionPool {
   private final Deque<RealConnection> connections = new ArrayDeque<>();
   final RouteDatabase routeDatabase = new RouteDatabase();
   final Map<String, Integer> http2UrlMaxRequestMap = new ConcurrentHashMap<>();
+  private LocalAddressProvider localAddressProvider;
   boolean cleanupRunning;
 
   public RealConnectionPool(int maxIdleConnections, long keepAliveDuration, TimeUnit timeUnit) {
@@ -87,6 +89,14 @@ public final class RealConnectionPool {
   // check http://nginx.org/en/docs/http/ngx_http_v2_module.html#http2_max_requests
   public Map<String, Integer> getHttp2UrlMaxRequestMap() {
     return http2UrlMaxRequestMap;
+  }
+
+  public LocalAddressProvider getLocalAddressProvider() {
+    return localAddressProvider;
+  }
+
+  public void setLocalAddressProvider(LocalAddressProvider localAddressProvider) {
+    this.localAddressProvider = localAddressProvider;
   }
 
   public synchronized int idleConnectionCount() {

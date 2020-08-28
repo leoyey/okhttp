@@ -74,6 +74,11 @@ public final class Response implements Closeable {
     this.exchange = builder.exchange;
   }
 
+  @Nullable
+  public LocalAddress localAddress() {
+    return exchange != null ? exchange.connection().getLocalAddress() : null;
+  }
+
   /**
    * The wire-level request that initiated this HTTP response. This is not necessarily the same
    * request issued by the application:

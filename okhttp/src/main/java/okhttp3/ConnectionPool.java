@@ -16,9 +16,11 @@
  */
 package okhttp3;
 
+import okhttp3.internal.connection.RealConnectionPool;
+
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import okhttp3.internal.connection.RealConnectionPool;
 
 /**
  * Manages reuse of HTTP and HTTP/2 connections for reduced network latency. HTTP requests that
@@ -43,6 +45,10 @@ public final class ConnectionPool {
 
   public Map<String, Integer> getHttp2UrlMaxRequestMap() {
     return delegate.getHttp2UrlMaxRequestMap();
+  }
+
+  public void setLocalAddressProvider(@Nullable LocalAddressProvider localAddressProvider) {
+    this.delegate.setLocalAddressProvider(localAddressProvider);
   }
 
   /** Returns the number of idle connections in the pool. */

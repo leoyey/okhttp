@@ -23,6 +23,7 @@ import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.Proxy;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownServiceException;
@@ -44,6 +45,8 @@ import okhttp3.EventListener;
 import okhttp3.Handshake;
 import okhttp3.HttpUrl;
 import okhttp3.Interceptor;
+import okhttp3.LocalAddress;
+import okhttp3.LocalAddressProvider;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Request;
@@ -94,6 +97,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   private Http2Connection http2Connection;
   private BufferedSource source;
   private BufferedSink sink;
+  private LocalAddress localAddress;
 
   // The fields below track connection state and are guarded by connectionPool.
 
@@ -127,6 +131,10 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   public RealConnection(RealConnectionPool connectionPool, Route route) {
     this.connectionPool = connectionPool;
     this.route = route;
+  }
+
+  public LocalAddress getLocalAddress() {
+    return localAddress;
   }
 
   /** Prevent further exchanges from being created on this connection. */
@@ -257,6 +265,17 @@ public final class RealConnection extends Http2Connection.Listener implements Co
         ? address.socketFactory().createSocket()
         : new Socket(proxy);
 
+    LocalAddressProvider localAddressProvider = connectionPool.getLocalAddressProvider();
+    if (localAddressProvider != null) {
+      localAddress = localAddressProvider.getLocalAddress(call, route.socketAddress(),
+          proxy, rawSocket);
+      if (localAddress != null) {
+        SocketAddress la = localAddress.getAddress();
+        if (la != null) {
+          rawSocket.bind(la);
+        }
+      }
+    }
     eventListener.connectStart(call, route.socketAddress(), proxy);
     rawSocket.setSoTimeout(readTimeout);
     try {
@@ -592,6 +611,9 @@ public final class RealConnection extends Http2Connection.Listener implements Co
 
   /** Returns true if this connection is ready to host new streams. */
   public boolean isHealthy(boolean doExtensiveChecks) {
+    if (localAddress != null && !localAddress.isHealth()) {
+      return false;
+    }
     if (socket.isClosed() || socket.isInputShutdown() || socket.isOutputShutdown()) {
       return false;
     }
