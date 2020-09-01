@@ -17,6 +17,7 @@ package okhttp3;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -77,6 +78,11 @@ public final class Response implements Closeable {
   @Nullable
   public LocalAddress localAddress() {
     return exchange != null ? exchange.connection().getLocalAddress() : null;
+  }
+
+  @Nullable
+  public InetAddress getRawLocalAddress() {
+    return exchange != null ? exchange.connection().getRawLocalAddress() : null;
   }
 
   /**

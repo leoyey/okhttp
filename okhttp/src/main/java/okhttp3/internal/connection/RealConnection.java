@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.lang.ref.Reference;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.ProtocolException;
 import java.net.Proxy;
 import java.net.Socket;
@@ -137,6 +138,10 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     return localAddress;
   }
 
+  public InetAddress getRawLocalAddress() {
+    return rawSocket != null ? rawSocket.getLocalAddress() : null;
+  }
+
   /** Prevent further exchanges from being created on this connection. */
   public void noNewExchanges() {
     assert (!Thread.holdsLock(connectionPool));
@@ -198,6 +203,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
         closeQuietly(rawSocket);
         socket = null;
         rawSocket = null;
+        localAddress = null;
         source = null;
         sink = null;
         handshake = null;
@@ -249,6 +255,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       // connection, but this time with the auth credentials.
       closeQuietly(rawSocket);
       rawSocket = null;
+      localAddress = null;
       sink = null;
       source = null;
       eventListener.connectEnd(call, route.socketAddress(), route.proxy(), null);
