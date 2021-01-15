@@ -18,6 +18,7 @@ package okhttp3.internal.http;
 import java.io.IOException;
 import java.net.ProtocolException;
 import okhttp3.Interceptor;
+import okhttp3.LocalAddressTag;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.internal.Util;
@@ -37,7 +38,10 @@ public final class CallServerInterceptor implements Interceptor {
     RealInterceptorChain realChain = (RealInterceptorChain) chain;
     Exchange exchange = realChain.exchange();
     Request request = realChain.request();
-
+    LocalAddressTag localAddressTag = request.tag(LocalAddressTag.class);
+    if (localAddressTag != null) {
+      localAddressTag.setLocalAddress(exchange.connection().getLocalAddress());
+    }
     long sentRequestMillis = System.currentTimeMillis();
 
     exchange.writeRequestHeaders(request);
